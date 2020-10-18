@@ -39,37 +39,38 @@ def visualize(img, infos):
         cv2.putText(img, info['name'], (a1[0], a1[1]-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
     cv2.imwrite('test.jpg', img)
 
-def defect_info_out(xml_folder_path):
+def defect_info_out(xml_folder_path, crop: False):
     result = {}
     xml_files = os.listdir(xml_folder_path)
     for xml_file in xml_files:
         info_path = os.path.join(xml_folder_path, xml_file)
         infos = xml_info_out(info_path)
-        img_path = info_path.replace('side/outputs', 'side').replace('.xml', '.jpg')
-        img = cv2.imread(img_path)
         for info in infos:
             name, axis = info['name'], info['axis']
             min_x, max_x = min([axis[0][0], axis[1][0]]), max([axis[0][0], axis[1][0]])
             min_y, max_y = min([axis[0][1], axis[1][1]]), max([axis[0][1], axis[1][1]])
             width, height = max_x-min_x, max_y-min_y
-            img_new = img[min_y:max_y+1, min_x:max_x+1]
             if name not in result:
                 result[name] = {'count':1, 'width':[width], 'height':[height]}
             else:
                 result[name]['count'] += 1
                 result[name]['width'].append(width)
                 result[name]['height'].append(height)
-            cv2.imwrite('out/'+name+str(result[name]['count'])+'.jpg', img_new)
-            print(name+str(result[name]['count'])+'.jpg'+' finished!')
+            if crop:
+                img_path = info_path.replace('side/outputs', 'side').replace('.xml', '.jpg')
+                img = cv2.imread(img_path)
+                img_new = img[min_y:max_y + 1, min_x:max_x + 1]
+                cv2.imwrite('out/'+name+str(result[name]['count'])+'.jpg', img_new)
+                print(name+str(result[name]['count'])+'.jpg'+' finished!')
     return result
 
 
 # /home/qiangde/Data/huawei/black/side/
 # /home/qiangde/Data/huawei/black/side/outputs/
 if __name__ == '__main__':
-    img = cv2.imread('/home/qiangde/Data/huawei/black/side/0897-0003-14.jpg')
-    infos = xml_info_out('/home/qiangde/Data/huawei/black/side/outputs/0897-0003-14.xml')
-    visualize(img, infos)
+    # img = cv2.imread('/home/qiangde/Data/huawei/black/side/0897-0003-14.jpg')
+    # infos = xml_info_out('/home/qiangde/Data/huawei/black/side/outputs/0897-0003-14.xml')
+    # visualize(img, infos)
     result = defect_info_out('/home/qiangde/Data/huawei/black/side/outputs/')
     for key in result:
         print(key+': ',result[key])
