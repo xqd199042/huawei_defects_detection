@@ -1,6 +1,7 @@
 from xml.dom.minidom import parse, Element
 import os
 import cv2
+import numpy as np
 
 
 def polygon_to_line(list_axis):
@@ -39,7 +40,7 @@ def visualize(img, infos):
         cv2.putText(img, info['name'], (a1[0], a1[1]-7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
     cv2.imwrite('test.jpg', img)
 
-def defect_info_out(xml_folder_path, crop: False):
+def defect_info_out(xml_folder_path, crop=False, crop_size=128):
     result = {}
     xml_files = os.listdir(xml_folder_path)
     for xml_file in xml_files:
@@ -49,7 +50,8 @@ def defect_info_out(xml_folder_path, crop: False):
             name, axis = info['name'], info['axis']
             min_x, max_x = min([axis[0][0], axis[1][0]]), max([axis[0][0], axis[1][0]])
             min_y, max_y = min([axis[0][1], axis[1][1]]), max([axis[0][1], axis[1][1]])
-            width, height = max_x-min_x, max_y-min_y
+            center_x, center_y = (min_x+max_x)//2, (min_y+max_y)//2
+            width, height = max_x-min_x+1, max_y-min_y+1
             if name not in result:
                 result[name] = {'count':1, 'width':[width], 'height':[height]}
             else:
@@ -59,7 +61,12 @@ def defect_info_out(xml_folder_path, crop: False):
             if crop:
                 img_path = info_path.replace('side/outputs', 'side').replace('.xml', '.jpg')
                 img = cv2.imread(img_path)
-                img_new = img[min_y:max_y + 1, min_x:max_x + 1]
+                crop_min_y, crop_max_y, crop_min_x, crop_max_x = center_y-crop_size//2, center_y+crop_size//2, center_x-crop_size//2, center_x+crop_size//2
+                if center_y-crop_size//2 <= 0: crop_min_y, crop_max_y = 0, crop_size
+                if center_y+crop_size//2 >= 14600: crop_min_y, crop_max_y = 14600-crop_size, 14600
+                if center_x-crop_size//2 <= 0: crop_min_x, crop_max_x = 0, crop_size
+                if center_x+crop_size//2 >= 800: crop_min_x, crop_max_x = 800-crop_size, 800
+                img_new = img[crop_min_y:crop_max_y, crop_min_x:crop_max_x]
                 cv2.imwrite('out/'+name+str(result[name]['count'])+'.jpg', img_new)
                 print(name+str(result[name]['count'])+'.jpg'+' finished!')
     return result
@@ -73,7 +80,7 @@ if __name__ == '__main__':
     # visualize(img, infos)
     result = defect_info_out('/home/qiangde/Data/huawei/black/side/outputs/')
     for key in result:
-        print(key+': ',result[key])
+        print(key+': ', result[key])
 
 
 
