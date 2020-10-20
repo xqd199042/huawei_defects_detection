@@ -1,5 +1,5 @@
 import torch
-from torch import nn, flatten, optim
+from torch import nn, optim
 from torch.utils.data.dataloader import DataLoader
 from torchvision import datasets
 from torchvision.transforms import transforms, Normalize
@@ -59,11 +59,11 @@ class CNN(nn.Module):
 
 if __name__ == '__main__':
 
-    train_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/train', transform=transforms.Compose([
+    train_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/test/train', transform=transforms.Compose([
         transforms.ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]))
-    test_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/test', transform=transforms.Compose([
+    test_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/test/test', transform=transforms.Compose([
         transforms.ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]))
@@ -100,6 +100,7 @@ if __name__ == '__main__':
         train_acc /= len(train_data)
 
         test_acc = 0
+        net.eval()
         for img, label in test_data:
             img = img.to(device)
             label = label.to(device)
