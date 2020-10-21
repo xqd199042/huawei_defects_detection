@@ -91,23 +91,26 @@ class Anchor(Box):
     def __init__(self, init_w, init_h):
         super(Anchor, self).__init__(800-init_w/2, 10000-init_h/2, 800+init_w/2, 10000+init_h/2)
         self.boxes = []
+        self.num = 0
+        self.avg_iou = 0
         self.width = init_w
         self.height = init_h
 
     def update_wh(self):
         w, h = 0, 0
         ious = 0
+        self.num = len(self.boxes)
         for box in self.boxes:
             w += box.max_x-box.min_x
             h += box.max_y-box.min_y
             ious += compute_iou(box, self)
-        self.width = w/len(self.boxes)
-        self.height = h/len(self.boxes)
+        self.width = w/self.num
+        self.height = h/self.num
         self.min_x = 800 - self.width/2
         self.min_y = 10000 - self.height/2
         self.max_x = 800 + self.width/2
         self.max_y = 10000 + self.height/2
-        print('avg_iou: %f' % (ious/len(self.boxes)))
+        self.avg_iou = ious/self.num
         self.boxes = []
 
 # return box list, center is (800, 10000)
@@ -136,6 +139,7 @@ def kmeans_update(boxes, anchors):
     for i, anchor in enumerate(anchors):
         print('the %dth anchor:' % (i+1))
         anchor.update_wh()
+        print('num_boxes: %d, avg_iou: %f, width: %f, height: %f'%(anchor.num, anchor.avg_iou, anchor.width, anchor.height))
 
 # /home/qiangde/Data/huawei/black/side/
 # /home/qiangde/Data/huawei/black/side/outputs/
@@ -149,13 +153,17 @@ if __name__ == '__main__':
     for key in result:
         list_w, list_h = result[key]['width'], result[key]['height']
         boxes.extend(to_boxes(list_w, list_h))
-    selected_boxes = random.sample(boxes, 5)
+    selected_boxes = random.sample(boxes, 9)
     for b in selected_boxes:
         anchors.append(Anchor(b.max_x-b.min_x, b.max_y-b.min_y))
-    for i in range(1000):
+    for i in range(100):
         print('Iteration %d' % (i+1))
         kmeans_update(boxes, anchors)
 
+    ious = 0
+    for anchor in anchors:
+        ious += anchor.avg_iou*anchor.num
+    print(ious/len(boxes))
 
 
 
