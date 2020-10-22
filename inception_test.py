@@ -5,6 +5,41 @@ from torchvision import datasets
 from torchvision.transforms import transforms, Normalize
 
 
+class NewModel(nn.Module):
+    def __init__(self, num_classes):
+        super(NewModel, self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(3, 16, 3, 1, 2), # 16 64 64
+            nn.BatchNorm2d(16),
+            nn.LeakyReLU(inplace=True)
+        )
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(16, 32, 3, 2, 1), # 32 32 32
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(inplace=True)
+        )
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(32, 32, 3, 2, 1), # 32 16 16
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(inplace=True)
+        )
+        self.layer4 = nn.Sequential(
+            nn.Conv2d(32, 64, 3, 2, 1), #64 8 8
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(inplace=True)
+        )
+        self.gap = nn.AdaptiveAvgPool2d((1,1))
+        self.linear = nn.Linear(64, num_classes)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.gap(x)
+        x = x.view(x.size(0), -1)
+        return self.linear(x)
+
 class Unit(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Unit, self).__init__()
@@ -59,23 +94,23 @@ class CNN(nn.Module):
 
 if __name__ == '__main__':
 
-    train_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/test/train', transform=transforms.Compose([
+    train_data = datasets.ImageFolder('out/train', transform=transforms.Compose([
         transforms.ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]))
-    test_data = datasets.ImageFolder('/home/qiangde/PycharmProjects/utils/test/test', transform=transforms.Compose([
+    test_data = datasets.ImageFolder('out/test', transform=transforms.Compose([
         transforms.ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]))
-    train_data = DataLoader(train_data, batch_size=50, shuffle=True)
-    test_data = DataLoader(test_data, batch_size=50, shuffle=True)
+    train_data = DataLoader(train_data, batch_size=200, shuffle=True)
+    test_data = DataLoader(test_data, batch_size=255, shuffle=True)
 
     device = torch.device('cuda:0')
-    net = CNN()
+    net = NewModel(6)
     net.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-    # optimizer = optim.SGD(net.parameters(), 1e-3)
+    # optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    optimizer = optim.SGD(net.parameters(), 1e-3)
     epochs = 2000
 
     for epoch in range(epochs):
