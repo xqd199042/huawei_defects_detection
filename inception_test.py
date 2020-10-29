@@ -35,15 +35,15 @@ class CNN(nn.Module):
             nn.Dropout(drop_rate)
         )   #64 16 16
         self.layer4 = nn.Sequential(
-            Unit(64, 128, 2),
+            Unit(64, 64, 2),
             nn.Dropout(drop_rate)
         )  #128 8 8
         self.layer5 = nn.Sequential(
-            Unit(128, 256, 2),
+            Unit(64, 128, 2),
             nn.Dropout(drop_rate)
         ) #256 4 4
         self.gap = nn.AdaptiveAvgPool2d((1,1))
-        self.linear = nn.Linear(256, num_classes)
+        self.linear = nn.Linear(128, num_classes)
 
     def forward(self, x):
         x = self.layer1(x)
@@ -56,10 +56,12 @@ class CNN(nn.Module):
         return self.linear(x)
 
 if __name__ == '__main__':
-    num_classes = 7
+    epochs = 2000
+    num_classes = 6
     best_performance = 0.8
+    batch_size = 200
     save_path = 'model'
-    drop_rate= 0.2
+    drop_rate= 0.3
 
     train_data = datasets.ImageFolder('out/train', transform=transforms.Compose([
         transforms.ToTensor(),
@@ -69,8 +71,8 @@ if __name__ == '__main__':
         transforms.ToTensor(),
         Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ]))
-    train_data = DataLoader(train_data, batch_size=50, shuffle=True)
-    test_data = DataLoader(test_data, batch_size=50, shuffle=True)
+    train_data = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    test_data = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 
     device = torch.device('cuda:0')
     net = CNN(num_classes, drop_rate)
@@ -79,8 +81,7 @@ if __name__ == '__main__':
     # modify...
     # optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
     optimizer = optim.SGD(net.parameters(), lr=0.1)
-    lr_decay = lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
-    epochs = 2000
+    lr_decay = lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
     for epoch in range(epochs):
         train_loss = 0
